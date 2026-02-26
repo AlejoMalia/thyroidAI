@@ -13,8 +13,8 @@
 
 ## ✨ Features
 
-* 🌍 **Multilingual Support:** Full interface in 10 languages.
-* 🤖 **Multi-AI Compatibility:** Support for OpenAI, Groq, Anthropic, Gemini, xAI, and Ollama.
+* 🌍 **Multilingual Support:** Full interface in 20 languages.
+* 🤖 **Multi-AI Compatibility:** Support for OpenAI, Anthropic, Gemini, xAI, and Ollama.
 * 🔬 **Triangulation Protocol:** Expert system to detect metabolic "echoes."
 * 📊 **PDF Analysis:** Automatic data extraction from lab files.
 * 📂 **Data Management:** Automatic saving to a `thyroid-db.json` history file.

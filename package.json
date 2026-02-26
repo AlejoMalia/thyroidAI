@@ -2,7 +2,25 @@
   "name": "thyroidai",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
+  "main": "main.js",
+  "test": "test.js",
+  "description": "Professional AI engine to analyze thyroid panels (TSH, T4, T3, Antibodies) and map metabolic health.",
+  "author": "Alejo Malia",
+  "license": "MIT",
+  "keywords": [
+    "thyroid",
+    "health-tech",
+    "medical-ai",
+    "tsh",
+    "t4",
+    "t3",
+    "metabolic-mapping",
+    "hormones"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlejoMalia/thyroidAI.git"
+  },
   "dependencies": {
     "chalk": "^5.6.2",
     "enquirer": "^2.4.1",
@@ -10,11 +28,18 @@
     "pdf-parse": "^1.1.4",
     "tesseract.js": "^7.0.0"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/AlejoMalia/thyroidAI/issues"
+  },
+  "homepage": "https://github.com/AlejoMalia/thyroidAI#readme",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  }
 }
