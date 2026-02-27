@@ -3,10 +3,9 @@
   "version": "1.2.0",
   "type": "module",
   "main": "main.js",
-  "test": "test.js",
   "description": "Professional AI engine to analyze thyroid panels (TSH, T4, T3, Antibodies) and map metabolic health.",
   "author": "Alejo Malia",
-  "license": "MIT",
+  "license": "CC-BY-NC-4.0",
   "keywords": [
     "thyroid",
     "health-tech",
