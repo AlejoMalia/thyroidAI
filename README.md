@@ -3,7 +3,11 @@
 
 ![BANNER](docs/banner.png)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![npm version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://www.npmjs.com/package/cthmodules) [![Status: Beta](https://img.shields.io/badge/Status-Beta-orange.svg)](https://github.com/your-user/thyroid-ai)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/) [![npm version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://www.npmjs.com/package/cthmodules) [![Status: Beta](https://img.shields.io/badge/Status-Beta-orange.svg)](https://github.com/your-user/thyroid-ai)
+
+⚠️ **While ThyroidAI is a powerful metabolic triangulation system, it is intended solely as an educational and interpretive support tool. It is not a substitute for professional medical diagnosis or treatment. Always consult with a healthcare professional regarding any medical decisions.**
+
+---
 
 ```bash
 🚧 Beta version: Active development and testing phase.
@@ -13,13 +17,14 @@
 
 ## ✨ Features
 
-* 🌍 **Multilingual Support:** Full interface in 20 languages.
-* 🤖 **Multi-AI Compatibility:** Support for OpenAI, Anthropic, Gemini, xAI, and Ollama.
-* 🔬 **Triangulation Protocol:** Expert system to detect metabolic "echoes."
-* 📊 **PDF Analysis:** Automatic data extraction from lab files.
-* 📂 **Data Management:** Automatic saving to a `thyroid-db.json` history file.
-* 📈 **Batch Mode:** Process multiple patients or lab tests simultaneously.
-* 🦋 **Clinical Context:** Analysis adjustments based on specific thyroid conditions.
+* 🔬 **Metabolic Triangulation (v2.1):** Expert analysis of thyroid axis and conversion ratios ($FT3/FT4$, $FT3/rT3$).
+* 💊 **Pharmacological Engine:** Evaluates how thyroid medications (T4, T3, NDT) impact laboratory results.
+* 🤖 **Universal AI Support:** Native integration with OpenAI, Anthropic, Gemini, xAI, and local Ollama.
+* 🌍 **Global Reach:** Full multilingual interface and processing in 20 different languages.
+* 📋 **Smart Extraction:** High-fidelity PDF parsing to convert lab reports into structured clinical data.
+* 📈 **Batch Processing:** Ability to analyze multiple files simultaneously for research or cohort studies.
+* 🦋 **Clinical Context:** Analysis logic tailored to specific conditions like Hashimoto's or Graves'.
+* 🛡️ **Academic License:** Data persistence via JSON and non-commercial scientific licensing (CC BY-NC).
 
 ---
 ![BANNER](docs/info.png)
@@ -62,7 +67,7 @@ index.html
 
 1.  Clone this repository:
     ```bash
-    git clone [https://github.com/alejomalia/thyroidAI.git](https://github.com/alejomalia/thyroidAI.git)
+    git clone git clone https://github.com/alejomalia/thyroidAI.git
     cd thyroidAI
     ```
 
@@ -77,6 +82,18 @@ Launch the application with the following command:
 
 ```bash
 node main.js  # Main engine
-node test.js  # Verify lenguage, AI connectivity and protocol logic
+node thyroidai-cli.js  # Verify language, AI connectivity and protocol logic
 ```
+
+## ⚖️ License and Academic Purpose
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
+This project is committed to **Open Science** and the advancement of medical education. To ensure it remains a resource for the global research community and to prevent unauthorized commercial exploitation, it is licensed under the **CC BY-NC 4.0**.
+
+📝 Key Terms:
+- **Academic & Scientific Use:** You are encouraged to share, adapt, and build upon this material for educational and research purposes.
+
+- **Non-Commercial:** This tool and its derivatives cannot be used for commercial purposes or financial gain without explicit permission.
+
+- **Attribution:** You must give appropriate credit to the original author (Alejo Malia) and provide a link to the license.
 

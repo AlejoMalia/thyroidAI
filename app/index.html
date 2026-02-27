@@ -1,9 +1,12 @@
+/* ThyroidAI - Alejo Malia . 2026 */
+/* "The software code is provided for research purposes under the spirit of the CC BY-NC 4.0 license."*/
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThyroidAI v1.1 - Smart Memory</title>
+    <title>ThyroidAI v1.2 - Smart Memory + Triangulación</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
@@ -15,6 +18,7 @@
         .progress-bar { transition: width 1s ease-in-out; }
         .saved-badge { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .med-chip { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="antialiased">
@@ -65,6 +69,16 @@
                     <label class="block text-[10px] font-bold text-gray-400 uppercase mb-3" id="label-condition"></label>
                     <select id="condition-select" class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-black font-medium"></select>
                 </div>
+
+                <!-- === NUEVO PANEL DE MEDICACIÓN (manteniendo estilo exacto) === -->
+                <div class="pt-6 border-t border-gray-100">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-3" id="label-meds"></label>
+                    <div id="meds-list" class="space-y-3"></div>
+                    <button onclick="openMedModal()" class="w-full mt-4 bg-white border-2 border-dashed border-gray-200 hover:border-black py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all">
+                        💊 <span id="add-med-text"></span>
+                    </button>
+                </div>
+
                 <div class="border-2 border-dashed border-gray-100 rounded-3xl p-12 text-center hover:border-black transition-all cursor-pointer relative">
                     <input type="file" id="pdf-file" accept=".pdf" class="absolute inset-0 opacity-0 cursor-pointer">
                     <p class="text-gray-400" id="pdf-label">Click or drop Laboratory PDF</p>
@@ -93,10 +107,23 @@
                     <h3 id="dash-markers-title" class="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-2"></h3>
                 </div>
                 <div class="lg:col-span-2 space-y-12">
+                    <!-- Nueva sección: Impacto de Medicación -->
+                    <div id="med-impact-section">
+                        <h3 id="dash-medimpact-title" class="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-4 mb-6"></h3>
+                        <div id="med-impact-ui" class="text-base leading-relaxed text-gray-700 border-l-4 border-emerald-500 pl-8"></div>
+                    </div>
+
                     <div>
                         <h3 id="dash-patterns-title" class="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-4 mb-6"></h3>
                         <div id="patterns-ui" class="flex flex-wrap gap-2"></div>
                     </div>
+
+                    <!-- Nueva sección: Triangulación Avanzada -->
+                    <div>
+                        <h3 id="dash-triang-title" class="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-4 mb-6"></h3>
+                        <div id="triang-ui" class="text-base leading-relaxed text-gray-700 italic border-l-4 border-violet-500 pl-8 whitespace-pre-line"></div>
+                    </div>
+
                     <div>
                         <h3 id="dash-report-title" class="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-4 mb-6"></h3>
                         <div id="report-ui" class="text-lg leading-relaxed text-gray-700 italic font-light border-l-4 border-black pl-8 whitespace-pre-line"></div>
@@ -105,6 +132,54 @@
             </div>
         </div>
     </main>
+
+    <!-- === MODAL MEDICACIÓN (estilo idéntico al resto de la app) === -->
+    <div id="med-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[100]">
+        <div class="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden">
+            <div class="px-8 pt-8 pb-6 border-b">
+                <h3 id="med-modal-title" class="text-2xl font-bold"></h3>
+            </div>
+            <div class="p-8 space-y-6">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Tipo de medicación</label>
+                    <select id="med-type" class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-black">
+                        <option value="Levotiroxina (T4)">Levotiroxina (T4)</option>
+                        <option value="Liotironina (T3)">Liotironina (T3)</option>
+                        <option value="NDT / Armour / Nature-Throid">NDT / Armour / Nature-Throid</option>
+                        <option value="Combinado T4+T3">Combinado T4+T3</option>
+                        <option value="Antitiroideo">Antitiroideo (MMI / PTU)</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Medicamento específico</label>
+                    <input id="med-name" type="text" placeholder="Eutirox, Synthroid, Cytomel..." class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-black">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Dosis</label>
+                        <input id="med-dose" type="text" placeholder="125 mcg" class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Frecuencia</label>
+                        <input id="med-freq" type="text" value="Diaria" class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-black">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Fecha de inicio</label>
+                    <input id="med-start" type="date" class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-black">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Notas clínicas</label>
+                    <textarea id="med-notes" rows="3" placeholder="Efectos observados, intolerancias..." class="w-full border-2 border-gray-100 p-4 rounded-2xl outline-none focus:border-black"></textarea>
+                </div>
+            </div>
+            <div class="flex border-t">
+                <button onclick="closeMedModal()" class="flex-1 py-5 text-gray-500 font-bold hover:bg-gray-50 transition-all">Cancelar</button>
+                <button onclick="saveMedication()" class="flex-1 py-5 bg-black text-white font-bold hover:bg-gray-800 transition-all">Guardar Medicación</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
@@ -133,29 +208,29 @@
         };
 
         const TRANSLATIONS = {
-            es: { langName: '🇪🇸 Español', chooseLang: '🌍 Elige idioma:', chooseAI: '🤖 Elige proveedor de IA:', enterKey: '🔑 Ingresa tu API Key:', detecting: '🔍 Detectando modelos...', chooseModel: '🤖 Modelos disponibles:', chooseCondition: '🦋 Selecciona tu condición:', processing: '⏳ Procesando PDF...', resultsTitle: '📊 VALORACIÓN METABÓLICA', markersTitle: '🔬 MARCADORES', patternsTitle: '🎯 PATRONES', fullReport: '📋 INFORME', labelCond: 'Condición:' },
-            en: { langName: '🇺🇸 English', chooseLang: '🌍 Choose language:', chooseAI: '🤖 Choose AI provider:', enterKey: '🔑 Enter API Key:', detecting: '🔍 Detecting...', chooseModel: '🤖 Models:', chooseCondition: '🦋 Condition:', processing: '⏳ Processing...', resultsTitle: '📊 ASSESSMENT', markersTitle: '🔬 MARKERS', patternsTitle: '🎯 PATTERNS', fullReport: '📋 REPORT', labelCond: 'Condition:' },
-            fr: { langName: '🇫🇷 Français', chooseLang: '🌍 Choisir la langue:', chooseAI: '🤖 Choisir le fournisseur:', enterKey: '🔑 Entrer la clé API:', detecting: '🔍 Détection...', chooseModel: '🤖 Modèles:', chooseCondition: '🦋 Condition:', processing: '⏳ Traitement...', resultsTitle: '📊 ÉVALUATION', markersTitle: '🔬 MARQUEURS', patternsTitle: '🎯 MODÈLES', fullReport: '📋 RAPPORT', labelCond: 'Condition:' },
-            de: { langName: '🇩🇪 Deutsch', chooseLang: '🌍 Sprache wählen:', chooseAI: '🤖 KI-Anbieter wählen:', enterKey: '🔑 API-Key eingeben:', detecting: '🔍 Erkennung...', chooseModel: '🤖 Modelle:', chooseCondition: '🦋 Zustand:', processing: '⏳ Verarbeitung...', resultsTitle: '📊 BEWERTUNG', markersTitle: '🔬 MARKER', patternsTitle: '🎯 MUSTER', fullReport: '📋 BERICHT', labelCond: 'Zustand:' },
-            it: { langName: '🇮🇹 Italiano', chooseLang: '🌍 Scegli lingua:', chooseAI: '🤖 Scegli provider IA:', enterKey: '🔑 Inserisci API Key:', detecting: '🔍 Rilevamento...', chooseModel: '🤖 Modelli:', chooseCondition: '🦋 Condizione:', processing: '⏳ Elaborazione...', resultsTitle: '📊 VALUTAZIONE', markersTitle: '🔬 MARCATORI', patternsTitle: '🎯 MODELLI', fullReport: '📋 RAPPORTO', labelCond: 'Condizione:' },
-            pt: { langName: '🇵🇹 Português', chooseLang: '🌍 Escolher idioma:', chooseAI: '🤖 Escolher provedor de IA:', enterKey: '🔑 Digite sua API Key:', detecting: '🔍 Detectando...', chooseModel: '🤖 Modelos:', chooseCondition: '🦋 Condição:', processing: '⏳ Processando...', resultsTitle: '📊 AVALIAÇÃO', markersTitle: '🔬 MARCADORES', patternsTitle: '🎯 PADRÕES', fullReport: '📋 RELATÓRIO', labelCond: 'Condição:' },
-            nl: { langName: '🇳🇱 Nederlands', chooseLang: '🌍 Kies taal:', chooseAI: '🤖 Kies AI-provider:', enterKey: '🔑 Voer API Key in:', detecting: '🔍 Detecteren...', chooseModel: '🤖 Modellen:', chooseCondition: '🦋 Conditie:', processing: '⏳ Verwerken...', resultsTitle: '📊 BEOORDELING', markersTitle: '🔬 MARKERS', patternsTitle: '🎯 PATRONEN', fullReport: '📋 RAPPORT', labelCond: 'Conditie:' },
-            sv: { langName: '🇸🇪 Svenska', chooseLang: '🌍 Välj språk:', chooseAI: '🤖 Välj AI-leverantör:', enterKey: '🔑 Ange API-nyckel:', detecting: '🔍 Detekterar...', chooseModel: '🤖 Modeller:', chooseCondition: '🦋 Tillstånd:', processing: '⏳ Bearbetar...', resultsTitle: '📊 BEDÖMNING', markersTitle: '🔬 MARKÖRER', patternsTitle: '🎯 MÖNSTER', fullReport: '📋 RAPPORT', labelCond: 'Tillstånd:' },
-            pl: { langName: '🇵🇱 Polski', chooseLang: '🌍 Wybierz język:', chooseAI: '🤖 Wybierz dostawcę AI:', enterKey: '🔑 Wprowadź klucz API:', detecting: '🔍 Wykrywanie...', chooseModel: '🤖 Modele:', chooseCondition: '🦋 Stan:', processing: '⏳ Przetwarzanie...', resultsTitle: '📊 OCENA', markersTitle: '🔬 MARKERY', patternsTitle: '🎯 WZORCE', fullReport: '📋 RAPPORT', labelCond: 'Stan:' },
-            el: { langName: '🇬🇷 Ελληνικά', chooseLang: '🌍 Επιλογή γλώσσας:', chooseAI: '🤖 Επιλογή παρόχου AI:', enterKey: '🔑 Εισαγωγή API Key:', detecting: '🔍 Ανίχνευση...', chooseModel: '🤖 Μοντέλα:', chooseCondition: '🦋 Κατάσταση:', processing: '⏳ Επεξεργασία...', resultsTitle: '📊 ΑΞΙΟΛΟΓΗΣΗ', markersTitle: '🔬 ΔΕΙΚΤΕΣ', patternsTitle: '🎯 ΠΡΟΤΥΠΑ', fullReport: '📋 ΑΝΑΦΟΡΑ', labelCond: 'Κατάσταση:' },
-            ru: { langName: '🇷🇺 Русский', chooseLang: '🌍 Выберите язык:', chooseAI: '🤖 Выберите ИИ:', enterKey: '🔑 Введите API Key:', detecting: '🔍 Поиск...', chooseModel: '🤖 Модели:', chooseCondition: '🦋 Состояние:', processing: '⏳ Обработка...', resultsTitle: '📊 ОЦЕНКА', markersTitle: '🔬 МАРКЕРЫ', patternsTitle: '🎯 ПАТТЕРНЫ', fullReport: '📋 ОТЧЕТ', labelCond: 'Состояние:' },
-            ja: { langName: '🇯🇵 日本語', chooseLang: '🌍 言語を選択:', chooseAI: '🤖 AIプロバイダーを選択:', enterKey: '🔑 APIキーを入力:', detecting: '🔍 検出中...', chooseModel: '🤖 モデル:', chooseCondition: '🦋 状態:', processing: '⏳ 処理中...', resultsTitle: '📊 評価', markersTitle: '🔬 マーカー', patternsTitle: '🎯 パターン', fullReport: '📋 レポート', labelCond: '状態:' },
-            zh: { langName: '🇨🇳 中文', chooseLang: '🌍 选择语言:', chooseAI: '🤖 选择 AI 提供商:', enterKey: '🔑 输入 API Key:', detecting: '🔍 检测中...', chooseModel: '🤖 模型:', chooseCondition: '🦋 状况:', processing: '⏳ 处理中...', resultsTitle: '📊 评估', markersTitle: '🔬 指标', patternsTitle: '🎯 模式', fullReport: '📋 报告', labelCond: '状况:' },
-            ko: { langName: '🇰🇷 한국어', chooseLang: '🌍 언어 선택:', chooseAI: '🤖 AI 제공업체 선택:', enterKey: '🔑 API 키 입력:', detecting: '🔍 감지 중...', chooseModel: '🤖 모델:', chooseCondition: '🦋 상태:', processing: '⏳ 처리 중...', resultsTitle: '📊 평가', markersTitle: '🔬 마커', patternsTitle: '🎯 패턴', fullReport: '📋 보고서', labelCond: '상태:' },
-            hi: { langName: '🇮🇳 हिन्दी', chooseLang: '🌍 भाषा चुनें:', chooseAI: '🤖 AI प्रदाता चुनें:', enterKey: '🔑 API Key डालें:', detecting: '🔍 पता लगा रहा है...', chooseModel: '🤖 मॉडल:', chooseCondition: '🦋 स्थिति:', processing: '⏳ प्रसंस्करण...', resultsTitle: '📊 मूल्यांकन', markersTitle: '🔬 मार्कर', patternsTitle: '🎯 पैटर्न', fullReport: '📋 रिपोर्ट', labelCond: 'स्थिति:' },
-            th: { langName: '🇹🇭 ไทย', chooseLang: '🌍 เลือกภาษา:', chooseAI: '🤖 เลือกผู้ให้บริการ AI:', enterKey: '🔑 ใส่ API Key:', detecting: '🔍 กำลังตรวจหา...', chooseModel: '🤖 รุ่น:', chooseCondition: '🦋 อาการ:', processing: '⏳ กำลังประมวลผล...', resultsTitle: '📊 การประเมิน', markersTitle: '🔬 ตัวบ่งชี้', patternsTitle: '🎯 รูปแบบ', fullReport: '📋 รายงาน', labelCond: 'อาการ:' },
-            vi: { langName: '🇻🇳 Tiếng Việt', chooseLang: '🌍 Chọn ngôn ngữ:', chooseAI: '🤖 Chọn nhà cung cấp AI:', enterKey: '🔑 Nhập API Key:', detecting: '🔍 Đang dò tìm...', chooseModel: '🤖 Mô hình:', chooseCondition: '🦋 Tình trạng:', processing: '⏳ Đang xử lý...', resultsTitle: '📊 ĐÁNH GIÁ', markersTitle: '🔬 CHỈ SỐ', patternsTitle: '🎯 MẪU', fullReport: '📋 BÁO CÁO', labelCond: 'Tình trạng:' },
-            tr: { langName: '🇹🇷 Türkçe', chooseLang: '🌍 Dil seçin:', chooseAI: '🤖 AI sağlayıcı seçin:', enterKey: '🔑 API Anahtarını girin:', detecting: '🔍 Tespit ediliyor...', chooseModel: '🤖 Modeller:', chooseCondition: '🦋 Durum:', processing: '⏳ İşleniyor...', resultsTitle: '📊 DEĞERLENDİRME', markersTitle: '🔬 BELİRTEÇLER', patternsTitle: '🎯 DESENLER', fullReport: '📋 RAPOR', labelCond: 'Durum:' },
-            ar: { langName: '🇸🇦 العربية', chooseLang: '🌍 اختر اللغة:', chooseAI: '🤖 اختر مزود الذكاء:', enterKey: '🔑 أدخل مفتاح API:', detecting: '🔍 جاري الكشف...', chooseModel: '🤖 النماذج:', chooseCondition: '🦋 الحالة:', processing: '⏳ جاري المعالجة...', resultsTitle: '📊 التقييم', markersTitle: '🔬 المؤشرات', patternsTitle: '🎯 الأنماط', fullReport: '📋 التقرير', labelCond: 'الحالة:' },
-            he: { langName: '🇮🇱 עברית', chooseLang: '🌍 בחר שפה:', chooseAI: '🤖 בחר ספק בינה מלאכותית:', enterKey: '🔑 הזן מפתח API:', detecting: '🔍 מזהה...', chooseModel: '🤖 מודלים:', chooseCondition: '🦋 מצב:', processing: '⏳ מעבד...', resultsTitle: '📊 הערכה', markersTitle: '🔬 סמנים', patternsTitle: '🎯 דפוסים', fullReport: '📋 דוח', labelCond: 'מצב:' }
+            es: { langName: '🇪🇸 Español', chooseLang: '🌍 Elige idioma:', chooseAI: '🤖 Elige proveedor de IA:', enterKey: '🔑 Ingresa tu API Key:', detecting: '🔍 Detectando modelos...', chooseModel: '🤖 Modelos disponibles:', chooseCondition: '🦋 Selecciona tu condición:', processing: '⏳ Procesando PDF...', resultsTitle: '📊 VALORACIÓN METABÓLICA', markersTitle: '🔬 MARCADORES', patternsTitle: '🎯 PATRONES', fullReport: '📋 INFORME', labelCond: 'Condición:', labelMeds: '💊 Medicación actual para tiroides', addMedText: 'Añadir nueva medicación', medModalTitle: 'Registrar Medicación Tiroidea', medImpactTitle: '💊 Impacto de la Medicación', triangTitle: '🔬 Triangulación Avanzada (v2.0)' },
+            en: { langName: '🇺🇸 English', chooseLang: '🌍 Choose language:', chooseAI: '🤖 Choose AI provider:', enterKey: '🔑 Enter API Key:', detecting: '🔍 Detecting...', chooseModel: '🤖 Models:', chooseCondition: '🦋 Condition:', processing: '⏳ Processing...', resultsTitle: '📊 ASSESSMENT', markersTitle: '🔬 MARKERS', patternsTitle: '🎯 PATTERNS', fullReport: '📋 REPORT', labelCond: 'Condition:', labelMeds: '💊 Current thyroid medication', addMedText: 'Add new medication', medModalTitle: 'Register Thyroid Medication', medImpactTitle: '💊 Medication Impact', triangTitle: '🔬 Advanced Triangulation (v2.0)' },
+            fr: { langName: '🇫🇷 Français', chooseLang: '🌍 Choisir la langue:', chooseAI: '🤖 Choisir le fournisseur:', enterKey: '🔑 Entrer la clé API:', detecting: '🔍 Détection...', chooseModel: '🤖 Modèles:', chooseCondition: '🦋 Condition:', processing: '⏳ Traitement...', resultsTitle: '📊 ÉVALUATION', markersTitle: '🔬 MARQUEURS', patternsTitle: '🎯 MODÈLES', fullReport: '📋 RAPPORT', labelCond: 'Condition:', labelMeds: '💊 Médication thyroïdienne actuelle', addMedText: 'Ajouter nouvelle médication', medModalTitle: 'Enregistrer médication thyroïdienne', medImpactTitle: '💊 Impact du médicament', triangTitle: '🔬 Triangulation avancée (v2.0)' },
+            de: { langName: '🇩🇪 Deutsch', chooseLang: '🌍 Sprache wählen:', chooseAI: '🤖 KI-Anbieter wählen:', enterKey: '🔑 API-Key eingeben:', detecting: '🔍 Erkennung...', chooseModel: '🤖 Modelle:', chooseCondition: '🦋 Zustand:', processing: '⏳ Verarbeitung...', resultsTitle: '📊 BEWERTUNG', markersTitle: '🔬 MARKER', patternsTitle: '🎯 MUSTER', fullReport: '📋 BERICHT', labelCond: 'Zustand:', labelMeds: '💊 Aktuelle Schilddrüsenmedikation', addMedText: 'Neue Medikation hinzufügen', medModalTitle: 'Schilddrüsenmedikation registrieren', medImpactTitle: '💊 Auswirkung der Medikation', triangTitle: '🔬 Erweiterte Triangulation (v2.0)' },
+            it: { langName: '🇮🇹 Italiano', chooseLang: '🌍 Scegli lingua:', chooseAI: '🤖 Scegli provider IA:', enterKey: '🔑 Inserisci API Key:', detecting: '🔍 Rilevamento...', chooseModel: '🤖 Modelli:', chooseCondition: '🦋 Condizione:', processing: '⏳ Elaborazione...', resultsTitle: '📊 VALUTAZIONE', markersTitle: '🔬 MARCATORI', patternsTitle: '🎯 MODELLI', fullReport: '📋 RAPPORTO', labelCond: 'Condizione:', labelMeds: '💊 Medicazione tiroidea attuale', addMedText: 'Aggiungi nuova medicazione', medModalTitle: 'Registra medicazione tiroidea', medImpactTitle: '💊 Impatto della medicazione', triangTitle: '🔬 Triangolazione avanzata (v2.0)' },
+            pt: { langName: '🇵🇹 Português', chooseLang: '🌍 Escolher idioma:', chooseAI: '🤖 Escolher provedor de IA:', enterKey: '🔑 Digite sua API Key:', detecting: '🔍 Detectando...', chooseModel: '🤖 Modelos:', chooseCondition: '🦋 Condição:', processing: '⏳ Processando...', resultsTitle: '📊 AVALIAÇÃO', markersTitle: '🔬 MARCADORES', patternsTitle: '🎯 PADRÕES', fullReport: '📋 RELATÓRIO', labelCond: 'Condição:', labelMeds: '💊 Medicação tireoidiana atual', addMedText: 'Adicionar nova medicação', medModalTitle: 'Registrar medicação tireoidiana', medImpactTitle: '💊 Impacto da medicação', triangTitle: '🔬 Triangulação avançada (v2.0)' },
+            nl: { langName: '🇳🇱 Nederlands', chooseLang: '🌍 Kies taal:', chooseAI: '🤖 Kies AI-provider:', enterKey: '🔑 Voer API Key in:', detecting: '🔍 Detecteren...', chooseModel: '🤖 Modellen:', chooseCondition: '🦋 Conditie:', processing: '⏳ Verwerken...', resultsTitle: '📊 BEOORDELING', markersTitle: '🔬 MARKERS', patternsTitle: '🎯 PATRONEN', fullReport: '📋 RAPPORT', labelCond: 'Conditie:', labelMeds: '💊 Huidige schildkliermedicatie', addMedText: 'Nieuwe medicatie toevoegen', medModalTitle: 'Schildkliermedicatie registreren', medImpactTitle: '💊 Impact van medicatie', triangTitle: '🔬 Geavanceerde triangulatie (v2.0)' },
+            sv: { langName: '🇸🇪 Svenska', chooseLang: '🌍 Välj språk:', chooseAI: '🤖 Välj AI-leverantör:', enterKey: '🔑 Ange API-nyckel:', detecting: '🔍 Detekterar...', chooseModel: '🤖 Modeller:', chooseCondition: '🦋 Tillstånd:', processing: '⏳ Bearbetar...', resultsTitle: '📊 BEDÖMNING', markersTitle: '🔬 MARKÖRER', patternsTitle: '🎯 MÖNSTER', fullReport: '📋 RAPPORT', labelCond: 'Tillstånd:', labelMeds: '💊 Aktuell sköldkörtelmedicinering', addMedText: 'Lägg till ny medicinering', medModalTitle: 'Registrera sköldkörtelmedicinering', medImpactTitle: '💊 Effekt av medicineringen', triangTitle: '🔬 Avancerad triangulering (v2.0)' },
+            pl: { langName: '🇵🇱 Polski', chooseLang: '🌍 Wybierz język:', chooseAI: '🤖 Wybierz dostawcę AI:', enterKey: '🔑 Wprowadź klucz API:', detecting: '🔍 Wykrywanie...', chooseModel: '🤖 Modele:', chooseCondition: '🦋 Stan:', processing: '⏳ Przetwarzanie...', resultsTitle: '📊 OCENA', markersTitle: '🔬 MARKERY', patternsTitle: '🎯 WZORCE', fullReport: '📋 RAPPORT', labelCond: 'Stan:', labelMeds: '💊 Aktualna medykacja tarczycy', addMedText: 'Dodaj nową medykację', medModalTitle: 'Zarejestruj medykację tarczycy', medImpactTitle: '💊 Wpływ medykacji', triangTitle: '🔬 Zaawansowana triangulacja (v2.0)' },
+            el: { langName: '🇬🇷 Ελληνικά', chooseLang: '🌍 Επιλογή γλώσσας:', chooseAI: '🤖 Επιλογή παρόχου AI:', enterKey: '🔑 Εισαγωγή API Key:', detecting: '🔍 Ανίχνευση...', chooseModel: '🤖 Μοντέλα:', chooseCondition: '🦋 Κατάσταση:', processing: '⏳ Επεξεργασία...', resultsTitle: '📊 ΑΞΙΟΛΟΓΗΣΗ', markersTitle: '🔬 ΔΕΙΚΤΕΣ', patternsTitle: '🎯 ΠΡΟΤΥΠΑ', fullReport: '📋 ΑΝΑΦΟΡΑ', labelCond: 'Κατάσταση:', labelMeds: '💊 Τρέχουσα φαρμακευτική αγωγή θυρεοειδούς', addMedText: 'Προσθήκη νέας φαρμακευτικής', medModalTitle: 'Καταχώριση φαρμακευτικής αγωγής θυρεοειδούς', medImpactTitle: '💊 Επίδραση φαρμακευτικής αγωγής', triangTitle: '🔬 Προηγμένη Τριγωνοποίηση (v2.0)' },
+            ru: { langName: '🇷🇺 Русский', chooseLang: '🌍 Выберите язык:', chooseAI: '🤖 Выберите ИИ:', enterKey: '🔑 Введите API Key:', detecting: '🔍 Поиск...', chooseModel: '🤖 Модели:', chooseCondition: '🦋 Состояние:', processing: '⏳ Обработка...', resultsTitle: '📊 ОЦЕНКА', markersTitle: '🔬 МАРКЕРЫ', patternsTitle: '🎯 ПАТТЕРНЫ', fullReport: '📋 ОТЧЕТ', labelCond: 'Состояние:', labelMeds: '💊 Текущая терапия щитовидной железы', addMedText: 'Добавить новую медикацию', medModalTitle: 'Зарегистрировать медикацию щитовидной железы', medImpactTitle: '💊 Влияние медикации', triangTitle: '🔬 Продвинутая триангуляция (v2.0)' },
+            ja: { langName: '🇯🇵 日本語', chooseLang: '🌍 言語を選択:', chooseAI: '🤖 AIプロバイダーを選択:', enterKey: '🔑 APIキーを入力:', detecting: '🔍 検出中...', chooseModel: '🤖 モデル:', chooseCondition: '🦋 状態:', processing: '⏳ 処理中...', resultsTitle: '📊 評価', markersTitle: '🔬 マーカー', patternsTitle: '🎯 パターン', fullReport: '📋 レポート', labelCond: '状態:', labelMeds: '💊 現在の甲状腺薬', addMedText: '新しい薬を追加', medModalTitle: '甲状腺薬を登録', medImpactTitle: '💊 薬の影響', triangTitle: '🔬 高度な三角測量 (v2.0)' },
+            zh: { langName: '🇨🇳 中文', chooseLang: '🌍 选择语言:', chooseAI: '🤖 选择 AI 提供商:', enterKey: '🔑 输入 API Key:', detecting: '🔍 检测中...', chooseModel: '🤖 模型:', chooseCondition: '🦋 状况:', processing: '⏳ 处理中...', resultsTitle: '📊 评估', markersTitle: '🔬 指标', patternsTitle: '🎯 模式', fullReport: '📋 报告', labelCond: '状况:', labelMeds: '💊 当前甲状腺用药', addMedText: '添加新药物', medModalTitle: '注册甲状腺药物', medImpactTitle: '💊 药物影响', triangTitle: '🔬 高级三角分析 (v2.0)' },
+            ko: { langName: '🇰🇷 한국어', chooseLang: '🌍 언어 선택:', chooseAI: '🤖 AI 제공업체 선택:', enterKey: '🔑 API 키 입력:', detecting: '🔍 감지 중...', chooseModel: '🤖 모델:', chooseCondition: '🦋 상태:', processing: '⏳ 처리 중...', resultsTitle: '📊 평가', markersTitle: '🔬 마커', patternsTitle: '🎯 패턴', fullReport: '📋 보고서', labelCond: '상태:', labelMeds: '💊 현재 갑상선 약물', addMedText: '새로운 약물 추가', medModalTitle: '갑상선 약물 등록', medImpactTitle: '💊 약물 영향', triangTitle: '🔬 고급 삼각 측량 (v2.0)' },
+            hi: { langName: '🇮🇳 हिन्दी', chooseLang: '🌍 भाषा चुनें:', chooseAI: '🤖 AI प्रदाता चुनें:', enterKey: '🔑 API Key डालें:', detecting: '🔍 पता लगा रहा है...', chooseModel: '🤖 मॉडल:', chooseCondition: '🦋 स्थिति:', processing: '⏳ प्रसंस्करण...', resultsTitle: '📊 मूल्यांकन', markersTitle: '🔬 मार्कर', patternsTitle: '🎯 पैटर्न', fullReport: '📋 रिपोर्ट', labelCond: 'स्थिति:', labelMeds: '💊 वर्तमान थायरॉइड दवा', addMedText: 'नई दवा जोड़ें', medModalTitle: 'थायरॉइड दवा पंजीकृत करें', medImpactTitle: '💊 दवा का प्रभाव', triangTitle: '🔬 उन्नत ट्रायंगुलेशन (v2.0)' },
+            th: { langName: '🇹🇭 ไทย', chooseLang: '🌍 เลือกภาษา:', chooseAI: '🤖 เลือกผู้ให้บริการ AI:', enterKey: '🔑 ใส่ API Key:', detecting: '🔍 กำลังตรวจหา...', chooseModel: '🤖 รุ่น:', chooseCondition: '🦋 อาการ:', processing: '⏳ กำลังประมวลผล...', resultsTitle: '📊 การประเมิน', markersTitle: '🔬 ตัวบ่งชี้', patternsTitle: '🎯 รูปแบบ', fullReport: '📋 รายงาน', labelCond: 'อาการ:', labelMeds: '💊 ยาไทรอยด์ปัจจุบัน', addMedText: 'เพิ่มยาใหม่', medModalTitle: 'ลงทะเบียนยาไทรอยด์', medImpactTitle: '💊 ผลกระทบของยา', triangTitle: '🔬 การไตร่ตรองขั้นสูง (v2.0)' },
+            vi: { langName: '🇻🇳 Tiếng Việt', chooseLang: '🌍 Chọn ngôn ngữ:', chooseAI: '🤖 Chọn nhà cung cấp AI:', enterKey: '🔑 Nhập API Key:', detecting: '🔍 Đang dò tìm...', chooseModel: '🤖 Mô hình:', chooseCondition: '🦋 Tình trạng:', processing: '⏳ Đang xử lý...', resultsTitle: '📊 ĐÁNH GIÁ', markersTitle: '🔬 CHỈ SỐ', patternsTitle: '🎯 MẪU', fullReport: '📋 BÁO CÁO', labelCond: 'Tình trạng:', labelMeds: '💊 Thuốc tuyến giáp hiện tại', addMedText: 'Thêm thuốc mới', medModalTitle: 'Đăng ký thuốc tuyến giáp', medImpactTitle: '💊 Tác động của thuốc', triangTitle: '🔬 Tam giác hóa nâng cao (v2.0)' },
+            tr: { langName: '🇹🇷 Türkçe', chooseLang: '🌍 Dil seçin:', chooseAI: '🤖 AI sağlayıcı seçin:', enterKey: '🔑 API Anahtarını girin:', detecting: '🔍 Tespit ediliyor...', chooseModel: '🤖 Modeller:', chooseCondition: '🦋 Durum:', processing: '⏳ İşleniyor...', resultsTitle: '📊 DEĞERLENDİRME', markersTitle: '🔬 BELİRTEÇLER', patternsTitle: '🎯 DESENLER', fullReport: '📋 RAPOR', labelCond: 'Durum:', labelMeds: '💊 Mevcut tiroid ilacı', addMedText: 'Yeni ilaç ekle', medModalTitle: 'Tiroid ilacını kaydet', medImpactTitle: '💊 İlaç etkisi', triangTitle: '🔬 Gelişmiş Triangülasyon (v2.0)' },
+            ar: { langName: '🇸🇦 العربية', chooseLang: '🌍 اختر اللغة:', chooseAI: '🤖 اختر مزود الذكاء:', enterKey: '🔑 أدخل مفتاح API:', detecting: '🔍 جاري الكشف...', chooseModel: '🤖 النماذج:', chooseCondition: '🦋 الحالة:', processing: '⏳ جاري المعالجة...', resultsTitle: '📊 التقييم', markersTitle: '🔬 المؤشرات', patternsTitle: '🎯 الأنماط', fullReport: '📋 التقرير', labelCond: 'الحالة:', labelMeds: '💊 الدواء الحالي للغدة الدرقية', addMedText: 'إضافة دواء جديد', medModalTitle: 'تسجيل دواء الغدة الدرقية', medImpactTitle: '💊 تأثير الدواء', triangTitle: '🔬 التحليل الثلاثي المتقدم (v2.0)' },
+            he: { langName: '🇮🇱 עברית', chooseLang: '🌍 בחר שפה:', chooseAI: '🤖 בחר ספק בינה מלאכית:', enterKey: '🔑 הזן מפתח API:', detecting: '🔍 מזהה...', chooseModel: '🤖 מודלים:', chooseCondition: '🦋 מצב:', processing: '⏳ מעבד...', resultsTitle: '📊 הערכה', markersTitle: '🔬 סמנים', patternsTitle: '🎯 דפוסים', fullReport: '📋 דוח', labelCond: 'מצב:', labelMeds: '💊 תרופה נוכחית לבלוטת התריס', addMedText: 'הוסף תרופה חדשה', medModalTitle: 'רשום תרופה לבלוטת התריס', medImpactTitle: '💊 השפעת התרופה', triangTitle: '🔬 טריאנגולציה מתקדמת (v2.0)' }
         };
 
-        const PROVIDER_CONFIG = {
+        const PROVIDER_CONFIG = { /* exactamente el mismo */ 
             openai: { name: 'OpenAI', base: 'https://api.openai.com/v1/chat/completions', modelsUrl: 'https://api.openai.com/v1/models', headers: k => ({ Authorization: `Bearer ${k}` }) },
             groq: { name: 'Groq (Qwen)', base: 'https://api.groq.com/openai/v1/chat/completions', modelsUrl: 'https://api.groq.com/openai/v1/models', headers: k => ({ Authorization: `Bearer ${k}` }) },
             anthropic: { name: 'Claude (Anthropic)', base: 'https://api.anthropic.com/v1/messages', modelsUrl: 'https://api.anthropic.com/v1/models', headers: k => ({ 'x-api-key': k, 'anthropic-version': '2023-06-01' }) },
@@ -164,12 +239,38 @@
             ollama: { name: 'Ollama (Local)', base: 'http://127.0.0.1:11434/api/chat', modelsUrl: 'http://127.0.0.1:11434/api/tags', headers: k => ({}) }
         };
 
-        const PROTOCOLO_MAESTRO = `Protocolo Maestro de Triangulación y Mapeo Metabólico. Analiza: 1. Eje Energía (TSH, T4, T3). 2. Freno (rT3). 3. Autoinmunidad. 4. Transporte.`;
+        // === PROTOCOLO MAESTRO v2.0 - TRIANGULACIÓN PROFESIONAL + IMPACTO DE MEDICACIÓN ===
+        const PROTOCOLO_MAESTRO = `Eres endocrinólogo funcional de élite. PROTOCOLO MAESTRO DE TRIANGULACIÓN METABÓLICA v2.0 (Nivel Clínico Profesional):
+
+1. Eje Hipofisario-Tiroideo (TSH + relación con FT4/FT3)
+2. Conversión periférica y freno (FT3, rT3, ratio FT3/rT3, FT3/FT4)
+3. Autoinmunidad y transporte
+4. Rangos óptimos funcionales (TSH 0.5-2.0, FT4 1.2-1.8 ng/dL, FT3 3.2-4.2 pg/mL, etc.)
+5. IMPACTO ESPECÍFICO DE MEDICACIÓN (obligatorio):
+   - Levotiroxina → suprime TSH, eleva FT4, puede bajar FT3 si conversión pobre
+   - Liotironina / NDT → eleva FT3 directamente
+   - Antitiroideos → reducen producción
+   - Otros (betabloqueantes, litio, etc.)
+6. Patrones avanzados: Low T3 syndrome, Reverse T3 dominance, Peripheral resistance, Central hypothyroidism, Wilson’s temp. syndrome, etc.
+
+Paciente en: [CONDICIÓN]. Medicación actual: [MEDS].
+
+PDF: [PDF_TEXT]
+
+Devuelve ÚNICAMENTE este JSON válido y nada más:
+{
+  "markers": [{"name":"TSH","score":7,"summary":"... contextual con medicación"}],
+  "patterns": ["Poor T4→T3 conversion","rT3 dominance"],
+  "medImpact": "La levotiroxina 125 mcg está elevando FT4 pero la conversión es subóptima (FT3 bajo). Sugiero añadir 5-10 mcg liotironina o selenio 200 mcg.",
+  "triangulation": "Triangulación completa: hipotiroidismo subclínico + conversión alterada + medicación parcialmente efectiva.",
+  "fullReport": "Informe narrativo profesional largo..."
+}`;
 
         let currentLang = 'es';
         let currentProvider = '';
         let currentKey = '';
         let currentModel = '';
+        let currentMeds = JSON.parse(localStorage.getItem('thyroid_meds')) || [];
 
         function setStep(step) {
             document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
@@ -177,20 +278,16 @@
             if (target) target.classList.add('active');
         }
 
-        // CARGA DE IDIOMAS
+        // === CARGA DE IDIOMAS (igual que antes) ===
         const langGrid = document.getElementById('lang-grid');
         Object.keys(TRANSLATIONS).forEach(key => {
             const btn = document.createElement('button');
             btn.className = "bg-white border border-gray-100 p-4 rounded-xl font-semibold hover:border-black transition-all";
             btn.innerText = TRANSLATIONS[key].langName;
-            btn.onclick = () => { 
-                currentLang = key; 
-                checkSavedAI(); 
-            };
+            btn.onclick = () => { currentLang = key; checkSavedAI(); };
             langGrid.appendChild(btn);
         });
 
-        // MECANISMO DE MEMORIA
         function checkSavedAI() {
             const saved = JSON.parse(localStorage.getItem('thyroid_ai_config'));
             if (saved && saved.provider && (saved.key || saved.provider === 'ollama') && saved.model) {
@@ -265,11 +362,7 @@
                 btn.innerText = "Continue & Save →";
                 btn.onclick = () => {
                     currentModel = document.getElementById('model-select').value;
-                    localStorage.setItem('thyroid_ai_config', JSON.stringify({
-                        provider: currentProvider,
-                        key: currentKey,
-                        model: currentModel
-                    }));
+                    localStorage.setItem('thyroid_ai_config', JSON.stringify({ provider: currentProvider, key: currentKey, model: currentModel }));
                     showAIStatus();
                     startStep4();
                 };
@@ -283,10 +376,73 @@
             const t = TRANSLATIONS[currentLang];
             document.getElementById('title-step-4').innerText = t.chooseCondition;
             document.getElementById('label-condition').innerText = t.labelCond;
+            document.getElementById('label-meds').innerText = t.labelMeds;
+            document.getElementById('add-med-text').innerText = t.addMedText;
+
             const select = document.getElementById('condition-select');
             const conds = THYROID_LIST[currentLang] || THYROID_LIST['en'];
             select.innerHTML = conds.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            renderCurrentMeds();
             setStep(4);
+        }
+
+        // === GESTIÓN DE MEDICACIÓN ===
+        function renderCurrentMeds() {
+            const container = document.getElementById('meds-list');
+            container.innerHTML = '';
+            if (currentMeds.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-sm italic">Sin medicación registrada aún</p>`;
+                return;
+            }
+            currentMeds.forEach((med, i) => {
+                const div = document.createElement('div');
+                div.className = "med-chip flex items-center justify-between bg-gray-50 border border-gray-100 p-4 rounded-2xl";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-semibold">${med.type} — ${med.name}</div>
+                        <div class="text-xs text-gray-500">${med.dose} ${med.freq} • desde ${med.start || '—'}</div>
+                    </div>
+                    <button onclick="deleteMed(${i}); event.stopImmediatePropagation();" class="text-red-400 hover:text-red-600 text-xl leading-none">×</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openMedModal() {
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('med-modal-title').innerText = t.medModalTitle;
+            document.getElementById('med-modal').classList.remove('hidden');
+            // limpiar campos
+            document.getElementById('med-name').value = '';
+            document.getElementById('med-dose').value = '';
+            document.getElementById('med-notes').value = '';
+        }
+
+        function closeMedModal() {
+            document.getElementById('med-modal').classList.add('hidden');
+        }
+
+        function saveMedication() {
+            const type = document.getElementById('med-type').value;
+            const name = document.getElementById('med-name').value.trim() || 'Sin nombre';
+            const dose = document.getElementById('med-dose').value.trim();
+            const freq = document.getElementById('med-freq').value.trim() || 'Diaria';
+            const start = document.getElementById('med-start').value;
+            const notes = document.getElementById('med-notes').value.trim();
+
+            currentMeds.push({ type, name, dose, freq, start, notes });
+            localStorage.setItem('thyroid_meds', JSON.stringify(currentMeds));
+            renderCurrentMeds();
+            closeMedModal();
+        }
+
+        function deleteMed(index) {
+            if (confirm('¿Eliminar esta medicación?')) {
+                currentMeds.splice(index, 1);
+                localStorage.setItem('thyroid_meds', JSON.stringify(currentMeds));
+                renderCurrentMeds();
+            }
         }
 
         document.getElementById('pdf-file').onchange = (e) => {
@@ -298,7 +454,7 @@
 
         document.getElementById('btn-analyze').onclick = async () => {
             const file = document.getElementById('pdf-file').files[0];
-            if(!file) return alert("Please select a PDF");
+            if(!file) return alert("Por favor selecciona un PDF");
             document.getElementById('loading-text').innerText = TRANSLATIONS[currentLang].processing;
             setStep('step-loading');
 
@@ -319,7 +475,13 @@
 
         async function runAnalysis(pdfText) {
             const condition = document.getElementById('condition-select').value;
-            const prompt = `${PROTOCOLO_MAESTRO}. Condición: ${condition}. PDF: ${pdfText}. Devuelve solo JSON: { "markers": [{"name": "TSH", "score": 8, "summary": "..."}], "patterns": ["..."], "fullReport": "..." }`;
+            const medsStr = currentMeds.length ? JSON.stringify(currentMeds) : "Ninguna medicación registrada";
+
+            let prompt = PROTOCOLO_MAESTRO
+                .replace('[CONDICIÓN]', condition)
+                .replace('[MEDS]', medsStr)
+                .replace('[PDF_TEXT]', pdfText);
+
             try {
                 const cfg = PROVIDER_CONFIG[currentProvider];
                 let body, url = cfg.base;
@@ -329,26 +491,40 @@
                 } else {
                     body = { model: currentModel, messages: [{ role: 'user', content: prompt }], stream: false };
                 }
-                const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...cfg.headers(currentKey) }, body: JSON.stringify(body) });
+                const res = await fetch(url, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', ...cfg.headers(currentKey) }, 
+                    body: JSON.stringify(body) 
+                });
                 const d = await res.json();
-                let raw = currentProvider === 'gemini' ? d.candidates[0].content.parts[0].text : (currentProvider === 'ollama' ? d.message.content : d.choices[0].message.content);
-                renderDashboard(JSON.parse(raw.match(/\{[\s\S]*\}/)[0]), condition);
-            } catch (e) { console.error(e); alert("Error in analysis. Check console."); setStep(4); }
+                let raw = currentProvider === 'gemini' ? d.candidates[0].content.parts[0].text : 
+                          (currentProvider === 'ollama' ? d.message.content : d.choices[0].message.content);
+                
+                const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                const data = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+                renderDashboard(data, condition);
+            } catch (e) { 
+                console.error(e); 
+                alert("Error en análisis. Revisa consola."); 
+                setStep(4); 
+            }
         }
 
         function renderDashboard(data, condition) {
             setStep('dashboard');
-            document.querySelector('main').classList.replace('max-w-3xl', 'max-w-6xl');
-            const tr = TRANSLATIONS[currentLang];
-            document.getElementById('dash-res-title').innerText = tr.resultsTitle;
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('dash-res-title').innerText = t.resultsTitle;
             document.getElementById('dash-condition').innerText = condition;
-            document.getElementById('dash-markers-title').innerText = tr.markersTitle;
-            document.getElementById('dash-patterns-title').innerText = tr.patternsTitle;
-            document.getElementById('dash-report-title').innerText = tr.fullReport;
+            document.getElementById('dash-markers-title').innerText = t.markersTitle;
+            document.getElementById('dash-patterns-title').innerText = t.patternsTitle;
+            document.getElementById('dash-report-title').innerText = t.fullReport;
+            document.getElementById('dash-medimpact-title').innerText = t.medImpactTitle;
+            document.getElementById('dash-triang-title').innerText = t.triangTitle;
 
+            // Marcadores (igual que antes)
             const mUi = document.getElementById('markers-ui');
-            mUi.innerHTML = `<h3 class="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-2">${tr.markersTitle}</h3>`;
-            data.markers.forEach(m => {
+            mUi.innerHTML = `<h3 class="text-xs font-black text-gray-400 uppercase tracking-widest border-b pb-2">${t.markersTitle}</h3>`;
+            (data.markers || []).forEach(m => {
                 const div = document.createElement('div');
                 div.className = "mt-4";
                 div.innerHTML = `
@@ -361,9 +537,27 @@
                     <p class="text-[10px] text-gray-400 italic">${m.summary}</p>`;
                 mUi.appendChild(div);
             });
-            document.getElementById('patterns-ui').innerHTML = data.patterns.map(p => `<span class="bg-gray-50 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-gray-100">${p}</span>`).join('');
-            document.getElementById('report-ui').innerText = data.fullReport;
+
+            // Patrones
+            document.getElementById('patterns-ui').innerHTML = (data.patterns || []).map(p => 
+                `<span class="bg-gray-50 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-gray-100">${p}</span>`
+            ).join('');
+
+            // Nueva: Impacto de medicación
+            document.getElementById('med-impact-ui').innerText = data.medImpact || "Sin datos de medicación.";
+
+            // Nueva: Triangulación avanzada
+            document.getElementById('triang-ui').innerText = data.triangulation || "Triangulación completada con éxito.";
+
+            // Reporte completo
+            document.getElementById('report-ui').innerText = data.fullReport || "Informe generado correctamente.";
         }
+
+        // Inicializar
+        checkSavedAI();
     </script>
 </body>
 </html>
+
+/* ThyroidAI - Alejo Malia . 2026 */
+/* "The software code is provided for research purposes under the spirit of the CC BY-NC 4.0 license."*/

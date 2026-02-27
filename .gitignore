@@ -1,2 +1,23 @@
+# Sistema Operativo
+.DS_Store
+Thumbs.db
+.cache
+
+# Dependencias (NUNCA subir esta carpeta)
 node_modules/
+dist/
+
+# Archivos de configuración de IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Base de datos local (para que no subas tus pruebas personales)
+thyroid-db.json
+thyroid-meds.json
+
+# Claves de API (si llegas a crear un archivo .env)
 .env
